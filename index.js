@@ -2,6 +2,7 @@ require('dotenv').config()
 const express = require('express');
 const cors = require('cors');
 const sequelize = require('./db')
+const fileUpload = require('express-fileupload')
 const app = express();
 const port = 3000;
 const path = require('path');
@@ -10,7 +11,8 @@ const ErrorHandlingMiddleware = require('./middlewares/ErrorHandlingMiddleware')
 
 app.use(cors());
 app.use(express.json());
-app.use('/static', express.static(path.join(__dirname, 'public')))
+app.use(fileUpload({}))
+app.use(express.static(path.join(__dirname, 'static')))
 
 app.get('/', (req, res) => {
   res.send(")")

@@ -17,7 +17,8 @@ const Basket = sequelize.define('basket', {
 
 const BasketProduct = sequelize.define('basket_product', {
     id: {type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true},
-    quantity: {type: DataTypes.INTEGER, allowNull: false}
+    quantity: {type: DataTypes.INTEGER, allowNull: false},
+    hidden: {type: DataTypes.BOOLEAN, defaultValue: false }
 })
 
 const Product = sequelize.define('product', {
@@ -57,8 +58,8 @@ Order.belongsTo(User);
 Basket.hasMany(BasketProduct);
 BasketProduct.belongsTo(Basket);
 
-BasketProduct.hasOne(Product);
-Product.belongsTo(BasketProduct)
+Product.hasMany(BasketProduct);
+BasketProduct.belongsTo(Product)
 
 Product.hasMany(ProductInfo, {as: "info"})
 ProductInfo.belongsTo(Product)
