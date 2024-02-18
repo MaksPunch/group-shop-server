@@ -209,7 +209,7 @@ class UserController {
 
   async getOrders(req, res, next) {
     try {
-      const orders = Order.findOne({where: {userId: req.user.id}});
+      const orders = await Order.findAll({where: {userId: req.user.id}});
 
       if (!Object.keys(orders).length) {
         return res.json({message: "Заказов пока нет!"});
@@ -222,13 +222,23 @@ class UserController {
   }
 
   async deleteOrder(req, res, next) {
-    const { id } = req.body;
-    const order = await Order.findOne({ where: { id } });
-    if (!order) {
-      return next(ApiError.badRequest("Заказ не найден"));
+    try {
+      const {id} = req.params;
+      const {id: userId} = req.user;
+      const order = await Order.findOne({where: {id}});
+      if (!order) {
+        return next(ApiError.badRequest("Заказ не найден"));
+      }
+
+      if (order.userId !== userId) {
+        return next(ApiError.forbiddenError('Это не ваш заказ!'));
+      }
+
+      await Order.update({deleted: true}, {where: {id}});
+      res.json({message: "Заказ успешно удален!"});
+    } catch (e) {
+      next(ApiError.badRequest(e.message))
     }
-    await Order.update({ deleted: true }, { where: { id } });
-    res.json({ message: "Заказ успешно удален!" });
   }
 
   async auth(req, res) {

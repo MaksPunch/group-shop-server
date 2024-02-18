@@ -9,6 +9,7 @@ userRouter.delete('/basket', AuthCheckMiddleware, userController.deleteFromBaske
 userRouter.get('/auth', AuthCheckMiddleware, userController.auth);
 userRouter.get('/orders', AuthCheckMiddleware, userController.getOrders)
 userRouter.post('/order', AuthCheckMiddleware, userController.createOrder);
+userRouter.delete('/order/:id', AuthCheckMiddleware, userController.deleteOrder);
 userRouter.post('/register', userController.registration);
 userRouter.post('/login', userController.login);
 userRouter.get('/:id', userController.getUser);

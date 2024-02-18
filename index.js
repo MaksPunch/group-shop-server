@@ -25,7 +25,7 @@ app.use(ErrorHandlingMiddleware);
 const start = async () => {
   try {
     await sequelize.authenticate();
-    await sequelize.sync({ force: false });
+    await sequelize.sync();
     app.listen(port, () => console.log("started at", port));
   } catch (e) {
     console.log(e);
