@@ -14,22 +14,34 @@ class ProductController {
   }
 
   async getAll(req, res) {
-    let {brandId, categoryId, limit, page} = req.query;
+    let { brandId, categoryId, limit, page } = req.query;
     page = page || 1;
     limit = limit || 10;
-    let offset = page * limit - limit
+    let offset = page * limit - limit;
     let products;
     if (!brandId && !categoryId) {
-      products = await Product.findAndCountAll({limit, offset})
+      products = await Product.findAndCountAll({ limit, offset });
     }
     if (brandId && !categoryId) {
-      products = await Product.findAndCountAll({where: {brandId}, limit, offset})
+      products = await Product.findAndCountAll({
+        where: { brandId },
+        limit,
+        offset,
+      });
     }
     if (!brandId && categoryId) {
-      products = await Product.findAndCountAll({where: {categoryId}, limit, offset})
+      products = await Product.findAndCountAll({
+        where: { categoryId },
+        limit,
+        offset,
+      });
     }
     if (brandId && categoryId) {
-      products = await Product.findAndCountAll({where: {brandId, categoryId}, limit, offset})
+      products = await Product.findAndCountAll({
+        where: { brandId, categoryId },
+        limit,
+        offset,
+      });
     }
 
     return res.json({ products });
@@ -83,7 +95,8 @@ class ProductController {
 
   async updateProduct(req, res, next) {
     try {
-      const { id, name, description, price, categoryId, brandId } = req.body;
+      const { id } = req.params;
+      const { name, description, price, categoryId, brandId } = req.body;
       const { img } = req.files;
       let fileName = uuid.v4() + ".jpg";
       await img.mv(resolve(__dirname, "..", "static", fileName));
@@ -97,7 +110,10 @@ class ProductController {
         { name, description, price, img: fileName, categoryId, brandId },
         { where: { id } },
       );
-      return res.json({ old: product, new: newProduct });
+      const newProductFind = await Product.findOne({
+        where: { id },
+      });
+      return res.json({ old: product, new: newProductFind });
     } catch (e) {
       next(ApiError.badRequest(e.message));
     }

@@ -40,28 +40,28 @@ class UserController {
 
     if (errors.length) {
       return next(
-        ApiError.badRequest("Следующие поля пусты: " + errors.join(", ")),
+        ApiError.forbiddenError("Следующие поля пусты: " + errors.join(", ")),
       );
     }
 
     const candidate_login = await User.findOne({ where: { login } });
     if (candidate_login) {
       return next(
-        ApiError.badRequest("Пользователь с таким логином уже существует"),
+        ApiError.forbiddenError("Пользователь с таким логином уже существует"),
       );
     }
 
     const candidate_email = await User.findOne({ where: { email } });
     if (candidate_email) {
       return next(
-        ApiError.badRequest("Пользователь с такой почтой уже существует"),
+        ApiError.forbiddenError("Пользователь с такой почтой уже существует"),
       );
     }
 
     const candidate_phone = await User.findOne({ where: { phone } });
     if (candidate_phone) {
       return next(
-        ApiError.badRequest(
+        ApiError.forbiddenError(
           "Пользователь с таким номером телефона уже существует",
         ),
       );
@@ -120,10 +120,10 @@ class UserController {
       }
       const basketProducts = await BasketProduct.findAll({
         where: { basketId: basket.id, hidden: false },
-        include: {all: true}
+        include: { all: true },
       });
       if (!basketProducts.length) {
-        return res.json({message: "Корзина пуста"});
+        return res.json({ message: "Корзина пуста" });
       }
       res.json({ basketProducts });
     } catch (error) {
@@ -132,27 +132,27 @@ class UserController {
   }
 
   async addToBasket(req, res) {
-    const { productId } = req.body;
+    const { productId, quantity } = req.body;
     const basket = await Basket.findOne({ where: { userId: req.user.id } });
     const basketProductFound = await BasketProduct.findOne({
       where: { productId, basketId: basket.id, hidden: false },
     });
     if (basketProductFound) {
       await BasketProduct.update(
-        { quantity: basketProductFound.quantity + 1 },
+        { quantity: basketProductFound.quantity + (quantity || 1) },
         { where: { productId, hidden: false } },
       );
     } else {
       await BasketProduct.create({
         productId,
         basketId: basket.id,
-        quantity: 1,
+        quantity: quantity || 1,
       });
     }
     const basketProduct = await BasketProduct.findOne({
       where: { productId, hidden: false },
     });
-    res.json({ basketProduct, basket });
+    res.json({ message: "Товар добавлен в корзину! " });
   }
 
   async deleteFromBasket(req, res, next) {
@@ -168,7 +168,7 @@ class UserController {
       { hidden: true },
       { where: { productId, hidden: false } },
     );
-    res.json({ basketProduct });
+    res.json({ message: "Товар удален из корзины" });
   }
 
   async createOrder(req, res, next) {
@@ -178,9 +178,9 @@ class UserController {
         return next(ApiError.badRequest("Неверный пароль"));
       }
       const basket = await Basket.findOne({ where: { userId: req.user.id } });
-      const basketProducts = await BasketProduct.findAll({ 
-        where: { basketId: basket.id }, 
-        include: { all: true } 
+      const basketProducts = await BasketProduct.findAll({
+        where: { basketId: basket.id },
+        include: { all: true },
       });
       let total_price = basketProducts.reduce((curr, prev) => {
         return curr.product.price + prev.product.price;
@@ -197,47 +197,46 @@ class UserController {
         address,
         payment_method,
         shipment_method,
-        total_price
+        total_price,
       });
 
       res.json({ message: "Заказ успешно оформлен", order });
     } catch (error) {
-      next(ApiError.badRequest(error.message))
+      next(ApiError.badRequest(error.message));
     }
-
   }
 
   async getOrders(req, res, next) {
     try {
-      const orders = await Order.findAll({where: {userId: req.user.id}});
+      const orders = await Order.findAll({ where: { userId: req.user.id } });
 
       if (!Object.keys(orders).length) {
-        return res.json({message: "Заказов пока нет!"});
+        return res.json({ message: "Заказов пока нет!" });
       }
 
-      res.json({orders})
+      res.json({ orders });
     } catch (e) {
-      next(ApiError.badRequest(e.message))
+      next(ApiError.badRequest(e.message));
     }
   }
 
   async deleteOrder(req, res, next) {
     try {
-      const {id} = req.params;
-      const {id: userId} = req.user;
-      const order = await Order.findOne({where: {id}});
+      const { id } = req.params;
+      const { id: userId } = req.user;
+      const order = await Order.findOne({ where: { id } });
       if (!order) {
         return next(ApiError.badRequest("Заказ не найден"));
       }
 
       if (order.userId !== userId) {
-        return next(ApiError.forbiddenError('Это не ваш заказ!'));
+        return next(ApiError.forbiddenError("Это не ваш заказ!"));
       }
 
-      await Order.update({deleted: true}, {where: {id}});
-      res.json({message: "Заказ успешно удален!"});
+      await Order.update({ deleted: true }, { where: { id } });
+      res.json({ message: "Заказ успешно удален!" });
     } catch (e) {
-      next(ApiError.badRequest(e.message))
+      next(ApiError.badRequest(e.message));
     }
   }
 
