@@ -20,25 +20,29 @@ class ProductController {
     let offset = page * limit - limit;
     let products;
     if (!brandId && !categoryId) {
-      products = await Product.findAndCountAll({ limit, offset });
+      products = await Product.findAndCountAll({
+        where: { deleted: false },
+        limit,
+        offset,
+      });
     }
     if (brandId && !categoryId) {
       products = await Product.findAndCountAll({
-        where: { brandId },
+        where: { brandId, deleted: false },
         limit,
         offset,
       });
     }
     if (!brandId && categoryId) {
       products = await Product.findAndCountAll({
-        where: { categoryId },
+        where: { categoryId, deleted: false },
         limit,
         offset,
       });
     }
     if (brandId && categoryId) {
       products = await Product.findAndCountAll({
-        where: { brandId, categoryId },
+        where: { brandId, categoryId, deleted: false },
         limit,
         offset,
       });

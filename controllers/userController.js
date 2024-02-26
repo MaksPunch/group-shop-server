@@ -132,16 +132,23 @@ class UserController {
   }
 
   async addToBasket(req, res) {
-    const { productId, quantity } = req.body;
+    const { productId, quantity, quantityForce } = req.body;
     const basket = await Basket.findOne({ where: { userId: req.user.id } });
     const basketProductFound = await BasketProduct.findOne({
       where: { productId, basketId: basket.id, hidden: false },
     });
     if (basketProductFound) {
-      await BasketProduct.update(
-        { quantity: basketProductFound.quantity + (quantity || 1) },
-        { where: { productId, hidden: false } },
-      );
+      if (quantityForce) {
+        await BasketProduct.update(
+          { quantity: quantityForce },
+          { where: { productId, hidden: false } },
+        );
+      } else {
+        await BasketProduct.update(
+          { quantity: basketProductFound.quantity + (quantity || 1) },
+          { where: { productId, hidden: false } },
+        );
+      }
     } else {
       await BasketProduct.create({
         productId,
@@ -179,12 +186,16 @@ class UserController {
       }
       const basket = await Basket.findOne({ where: { userId: req.user.id } });
       const basketProducts = await BasketProduct.findAll({
-        where: { basketId: basket.id },
+        where: { basketId: basket.id, hidden: false },
         include: { all: true },
       });
-      let total_price = basketProducts.reduce((curr, prev) => {
-        return curr.product.price + prev.product.price;
-      });
+      let total_price =
+        basketProducts[0].product.price * basketProducts[0].quantity;
+      if (basketProducts.length > 1) {
+        total_price = basketProducts.reduce((curr, prev) => {
+          return curr.product.price + prev.product.price;
+        });
+      }
       await BasketProduct.update(
         { hidden: true },
         { where: { basketId: basket.id, hidden: false } },
